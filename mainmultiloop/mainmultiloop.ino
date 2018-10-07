@@ -18,9 +18,12 @@ const unsigned long postingInterval = 5L * 1000L;   // delay between updates, in
 
 // Initialize the Wifi client library
 WiFiClient client;
+// Initialize the Wifi server library
+WiFiServer server(80);
 
 //THREADS DEFINITIONS
 TaskHandle_t Task1;
+TaskHandle_t Task2;
 
 void codeForTask1( void * parameter){
 
@@ -29,6 +32,22 @@ void codeForTask1( void * parameter){
       Serial.println("Print from core 0, TASK1");
       delay(2000);
   }
+}
+
+void serverTask2( void * parameter){
+
+  //Setup
+  Serial.begin(115200);
+  server.begin();
+  Serial.print("server is at ");
+  Serial.println(WiFi.localIP());
+  //Loop
+  while(true){
+    // listen for incoming clients
+    WiFiClient client = server.available();
+    if (client) {
+        Serial.println("new client");
+    }
 }
 
 ///SETUP
@@ -52,6 +71,15 @@ void setup(){
     1,                        //priority of the task
     &Task1,                   //Task handle to keep track of created task
     0);                       //core
+
+  xTaskCreatePinnedToCore(
+    serverTask2,             //Task function
+    "Task_2",                 //name of task
+    1000,                     //Stack size of the task
+    NULL,                     //parameter of the task
+    1,                        //priority of the task
+    &Task2,                   //Task handle to keep track of created task
+    1);                       //core
 }
 
 void loop(){
